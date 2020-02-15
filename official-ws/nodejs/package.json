@@ -23,6 +23,7 @@
     "debug": "^4.1.1",
     "eventemitter2": "^5.0.1",
     "lodash": "^4.17.10",
+    "redis": "^3.0.2",
     "superagent": "^5.1.0",
     "ws": "^7.2.0"
   }

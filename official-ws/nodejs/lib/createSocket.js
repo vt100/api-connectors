@@ -3,6 +3,21 @@ const _ = require('lodash');
 const debug = require('debug')('BitMEX:realtime-api:socket');
 const signMessage = require('./signMessage');
 const WebSocketClient = require('./ReconnectingSocket');
+const redis = require('redis');
+
+var rs_publish = (data => {});
+
+if (process.env.BITMEX_REDIS) {
+    let redis_client = redis.createClient();
+    redis_client.on("error", function(error) {
+        console.error(error);
+    });
+    let channel = process.env.BITMEX_REDIS;
+    rs_publish = (data => {
+        redis_client.publish(channel, data);
+    });
+    console.log("set up redis channel", channel);
+}
 
 module.exports = function createSocket(options, bmexClient) {
   'use strict';
@@ -33,11 +48,14 @@ module.exports = function createSocket(options, bmexClient) {
 
   wsClient.onmessage = function(data) {
     try {
+      var data_orig = data;
       data = JSON.parse(data);
     } catch(e) {
       bmexClient.emit('error', 'Unable to parse incoming data:', data);
       return;
     }
+
+    rs_publish(data_orig);
 
     if (data.error) return bmexClient.emit('error', data.error);
     if (!data.data) return; // connection or subscription notice
